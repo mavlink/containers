@@ -1,0 +1,46 @@
+#
+# QGroundControl linux build environment
+#
+
+FROM ubuntu:xenial
+MAINTAINER Daniel Agar <daniel@agar.ca>
+
+COPY scripts/extract-qt-installer.sh /tmp/qt/
+
+ENV QT_PATH /opt/Qt
+ENV QT_DESKTOP $QT_PATH/5.9.2/gcc_64
+ENV PATH $QT_DESKTOP/bin:$PATH
+
+RUN apt-get update \
+	&& DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
+	ccache \
+	curl \
+	espeak \
+	g++ \
+	gcc \
+	git \
+	gosu \
+	libespeak-dev \
+	libfontconfig1 \
+	libgstreamer-plugins-base1.0-dev \
+	libgstreamer1.0-0:amd64 \
+	libgstreamer1.0-dev \
+	libsdl2-dev \
+	libudev-dev \
+	# Download & unpack Qt 5.9 toolchains & clean
+	&& curl -Lo /tmp/qt/installer.run 'http://download.qt.io/archive/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run' \
+	&& QT_CI_PACKAGES="qt.592.gcc_64,qt.592.qtspeech" /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
+	&& find "$QT_PATH" -mindepth 1 -maxdepth 1 ! -name '5.*' -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
+	# cleanup
+	&& apt-get -y autoremove \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+ENV CCACHE_MAXSIZE=1G
+ENV TERM=xterm
+ENV PATH "/usr/lib/ccache:$PATH"
+
+# create and start as LOCAL_USER_ID
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+CMD ["/bin/bash"]
