@@ -14,7 +14,6 @@ ENV PATH $QT_DESKTOP/bin:$PATH
 RUN apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
 	ccache \
-	curl \
 	espeak \
 	g++ \
 	gcc \
@@ -27,9 +26,10 @@ RUN apt-get update \
 	libgstreamer1.0-dev \
 	libsdl2-dev \
 	libudev-dev \
+	wget \
 	# Download & unpack Qt 5.9 toolchains & clean
-	&& curl -Lo /tmp/qt/installer.run 'http://download.qt.io/archive/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run' \
-	&& QT_CI_PACKAGES="qt.592.gcc_64,qt.592.qtspeech" /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
+	&& wget -c --no-check-certificate -nv https://download.qt.io/archive/qt/5.5/5.5.1/qt-opensource-linux-x64-android-5.5.1.run -O /tmp/qt_installer.run \
+	&& QT_CI_PACKAGES="qt.592.gcc_64,qt.592.qtspeech" /tmp/qt/extract-qt-installer.sh /tmp/qt_installer.run "$QT_PATH" \
 	&& find "$QT_PATH" -mindepth 1 -maxdepth 1 ! -name '5.*' -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
 	# cleanup
 	&& apt-get -y autoremove \
