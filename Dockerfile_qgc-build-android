@@ -14,7 +14,7 @@ ENV ANDROID_HOME /opt/android-sdk-linux
 
 ENV ANDROID_SDK_ROOT ${ANDROID_HOME}
 
-ENV ANDROID_NDK_ROOT /opt/android-ndk
+ENV ANDROID_NDK_ROOT /opt/android-ndk-r16b
 ENV ANDROID_NDK_TOOLCHAIN_PREFIX arm-linux-androideabi
 ENV ANDROID_NDK_TOOLCHAIN_VERSION 4.9
 ENV ANDROID_NDK_HOST linux-x86_64
@@ -28,6 +28,7 @@ RUN	dpkg --add-architecture i386 \
 	&& apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
 		ant \
+		ca-certificates \
 		ccache \
 		default-jdk \
 		git \
@@ -43,6 +44,7 @@ RUN	dpkg --add-architecture i386 \
 		libxrender1 \
 		libz1:i386 \
 		make \
+		unzip \
 		wget \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
@@ -61,9 +63,9 @@ RUN	wget -q "http://dl.google.com/android/android-sdk_r24.4.1-linux.tgz" -O /tmp
 	&& echo "y" | android update sdk -u -a -t tools,platform-tools,build-tools-21.1.2,$ANDROID_NDK_PLATFORM \
 	&& rm -rf /tmp/*
 
-# Android NDK r10e
-RUN	wget -q "http://dl.google.com/android/ndk/android-ndk-r10e-linux-x86_64.bin" /tmp/android-ndk.bin \
-	&& cd /tmp && chmod +x android-ndk.bin && ./android-ndk.bin > /dev/null && mv android-ndk-r10e $ANDROID_NDK_ROOT && chmod -R +rX $ANDROID_NDK_ROOT \
+# Android NDK r16b
+RUN	cd /tmp && wget -q "https://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip" \
+	&& unzip android-ndk-r16b-linux-x86_64.zip -d /opt \
 	&& rm -rf /tmp/*
 
 # create and start as LOCAL_USER_ID
