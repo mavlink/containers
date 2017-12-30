@@ -5,38 +5,41 @@
 FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-COPY scripts/extract-qt-installer.sh /tmp/qt/
+ENV QMAKESPEC=linux-g++-64
 
 ENV QT_PATH /opt/Qt
 ENV QT_DESKTOP $QT_PATH/5.9.2/gcc_64
-ENV PATH $QT_DESKTOP/bin:$PATH
+ENV PATH /usr/lib/ccache:$QT_DESKTOP/bin:$PATH
+ENV TERM=xterm
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
-	ccache \
-	espeak \
-	g++ \
-	gcc \
-	git \
-	gosu \
-	libespeak-dev \
-	libfontconfig1 \
-	libgstreamer-plugins-base1.0-dev \
-	libgstreamer1.0-0:amd64 \
-	libgstreamer1.0-dev \
-	libsdl2-dev \
-	libudev-dev \
-	wget \
-	# Download & unpack Qt 5.9 toolchains & clean
-	&& wget --no-check-certificate 'http://download.qt-project.org/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run' -O /tmp/qt_installer.run \
-	&& QT_CI_PACKAGES="qt.592.gcc_64,qt.592.qtspeech" /tmp/qt/extract-qt-installer.sh /tmp/qt_installer.run "$QT_PATH" \
-	&& find "$QT_PATH" -mindepth 1 -maxdepth 1 ! -name '5.*' -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
-	# cleanup
+RUN	apt-get update \
+	&& DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
+		ccache \
+		espeak \
+		g++ \
+		gcc \
+		git \
+		gosu \
+		libespeak-dev \
+		libfontconfig1 \
+		libgstreamer-plugins-base1.0-dev \
+		libgstreamer1.0-0:amd64 \
+		libgstreamer1.0-dev \
+		libsdl2-dev \
+		libudev-dev \
+		wget \
 	&& apt-get -y autoremove \
+	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 
-ENV CCACHE_MAXSIZE=1G
-ENV TERM=xterm
-ENV PATH /usr/lib/ccache:${PATH}
+# Download & unpack Qt 5.9 toolchains & clean
+COPY scripts/extract-qt-installer.sh /tmp/extract-qt-installer.sh
+RUN	wget -q "http://download.qt-project.org/official_releases/qt/5.9/5.9.2/qt-opensource-linux-x64-5.9.2.run" -O /tmp/qt-opensource-linux-x64-5.9.2.run \
+	&& QT_CI_PACKAGES="qt.592.gcc_64,qt.592.qtspeech" /tmp/extract-qt-installer.sh /tmp/qt-opensource-linux-x64-5.9.2.run "$QT_PATH" \
+	&& find "$QT_PATH" -mindepth 1 -maxdepth 1 ! -name '5.*' -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
+	&& rm -rf /tmp/*
+
+
 
 # create and start as LOCAL_USER_ID
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
