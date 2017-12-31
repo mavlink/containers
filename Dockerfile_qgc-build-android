@@ -14,7 +14,7 @@ ENV ANDROID_HOME /opt/android-sdk-linux
 
 ENV ANDROID_SDK_ROOT ${ANDROID_HOME}
 
-ENV ANDROID_NDK_ROOT /opt/android-ndk-r16b
+ENV ANDROID_NDK_ROOT /opt/android-ndk-r10e
 ENV ANDROID_NDK_TOOLCHAIN_PREFIX arm-linux-androideabi
 ENV ANDROID_NDK_TOOLCHAIN_VERSION 4.9
 ENV ANDROID_NDK_HOST linux-x86_64
@@ -36,8 +36,10 @@ RUN	dpkg --add-architecture i386 \
 		libc6:i386 \
 		libdbus-1-3 \
 		libfontconfig1 \
+		libgcc1:i386 \
 		libice6 \
 		libncurses5:i386 \
+		libsdl1.2debian:i386 \
 		libsm6 \
 		libstdc++6:i386 \
 		libxext6 \
@@ -46,6 +48,7 @@ RUN	dpkg --add-architecture i386 \
 		make \
 		unzip \
 		wget \
+		zlib1g:i386 \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
@@ -63,9 +66,12 @@ RUN	wget -q "http://dl.google.com/android/android-sdk_r24.4.1-linux.tgz" -O /tmp
 	&& echo "y" | android update sdk -u -a -t tools,platform-tools,build-tools-21.1.2,$ANDROID_NDK_PLATFORM \
 	&& rm -rf /tmp/*
 
-# Android NDK r16b
-RUN	cd /tmp && wget -q "https://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip" \
-	&& unzip android-ndk-r16b-linux-x86_64.zip -d /opt \
+# Android NDK r10e
+RUN	wget -q http://dl.google.com/android/ndk/android-ndk-r10e-linux-x86_64.bin \
+        && chmod +x android-ndk-r10e-linux-x86_64.bin \
+        && ./android-ndk-r10e-linux-x86_64.bin > /dev/null \
+	&& mv android-ndk-r10e /opt/android-ndk-r10e \
+	&& chmod -R +rx /opt/android-ndk-r10e \
 	&& rm -rf /tmp/*
 
 # create and start as LOCAL_USER_ID
