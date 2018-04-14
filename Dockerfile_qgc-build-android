@@ -30,6 +30,7 @@ RUN	dpkg --add-architecture i386 \
 		ant \
 		ca-certificates \
 		ccache \
+		cmake \
 		default-jdk \
 		git \
 		gosu \
