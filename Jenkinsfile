@@ -15,7 +15,7 @@ pipeline {
             git 'https://github.com/mavlink/qgroundcontrol.git'
             dir(path: 'Firmware') {
               sh 'export'
-              sh 'make clean'
+              //sh 'make clean'
               sh 'ccache -z'
               //sh 'make'
               sh 'ccache -s'
@@ -35,7 +35,7 @@ pipeline {
             git 'https://github.com/mavlink/qgroundcontrol.git'
             dir(path: 'Firmware') {
               sh 'export'
-              sh 'make clean'
+              //sh 'make clean'
               sh 'ccache -z'
               //sh 'make'
               sh 'ccache -s'
