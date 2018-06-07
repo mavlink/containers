@@ -5,32 +5,37 @@
 FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-ENV QMAKESPEC=android-g++
+ARG QT_VERSION=5.11.0
+ARG NDK_VERSION=r16b
+ARG SDK_PLATFORM=android-21
+ARG SDK_BUILD_TOOLS=21.1.2
+ARG SDK_PACKAGES="tools platform-tools"
 
+ENV DEBIAN_FRONTEND noninteractive
 ENV QT_PATH /opt/Qt
-ENV QT_ANDROID ${QT_PATH}/5.11.0/android_armv7
+ENV QT_ANDROID ${QT_PATH}/${QT_VERSION}/android_armv7
 
-ENV ANDROID_HOME /opt/android-sdk-linux
+ENV ANDROID_HOME /opt/android-sdk
 
 ENV ANDROID_SDK_ROOT ${ANDROID_HOME}
 
-ENV ANDROID_NDK_ROOT /opt/android-ndk-r10e
+ENV ANDROID_NDK_ROOT /opt/android-ndk
 ENV ANDROID_NDK_TOOLCHAIN_PREFIX arm-linux-androideabi
 ENV ANDROID_NDK_TOOLCHAIN_VERSION 4.9
 ENV ANDROID_NDK_HOST linux-x86_64
-ENV ANDROID_NDK_PLATFORM android-21
+ENV ANDROID_NDK_PLATFORM ${SDK_PLATFORM}
 ENV ANDROID_NDK_TOOLS_PREFIX ${ANDROID_NDK_TOOLCHAIN_PREFIX}
 
-ENV TERM=xterm
-ENV PATH /usr/lib/ccache:${PATH}:${QT_ANDROID}/bin:${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
+ENV QMAKESPEC android-g++
+ENV PATH /usr/lib/ccache:${QT_ANDROID}/bin:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools:${PATH}
 
 RUN	dpkg --add-architecture i386 \
-	&& apt-get update \
-	&& DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
+	&& apt-get update && apt-get -y --quiet --no-install-recommends install \
 		ant \
 		ca-certificates \
 		ccache \
 		cmake \
+		curl \
 		default-jdk \
 		git \
 		gosu \
@@ -46,7 +51,10 @@ RUN	dpkg --add-architecture i386 \
 		libxext6 \
 		libxrender1 \
 		libz1:i386 \
+		locales \
 		make \
+		openssh-client \
+		sudo \
 		unzip \
 		wget \
 		zlib1g:i386 \
@@ -54,26 +62,26 @@ RUN	dpkg --add-architecture i386 \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 
-# Download & unpack Qt 5.11 toolchains & clean
-COPY scripts/extract-qt-installer.sh /tmp/extract-qt-installer.sh
-RUN	wget -q "http://download.qt-project.org/official_releases/qt/5.11/5.11.0/qt-opensource-linux-x64-5.11.0.run" -O /tmp/qt-opensource-linux-x64-5.11.0.run \
-	&& /tmp/extract-qt-installer.sh --list-packages /tmp/qt-opensource-linux-x64-5.11.0.run \
-	&& QT_CI_PACKAGES="qt.qt5.5110.android_armv7,qt.qt5.5110.qtcharts" /tmp/extract-qt-installer.sh /tmp/qt-opensource-linux-x64-5.11.0.run "$QT_PATH" \
+COPY scripts/extract-qt-installer.sh /tmp/qt/
+
+# Download & unpack Qt toolchains & clean
+RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/official_releases/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
+	&& QT_CI_PACKAGES=qt.qt5.$(echo "${QT_VERSION}" | tr -d .).android_armv7 /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
+	&& find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
 	&& rm -rf /tmp/*
 
-# Android SDK r24
-RUN	wget -q "http://dl.google.com/android/android-sdk_r24.4.1-linux.tgz" -O /tmp/android-sdk.tgz \
-	&& tar --no-same-owner -xf /tmp/android-sdk.tgz -C /opt \
-	&& echo "y" | android update sdk -u -a -t tools,platform-tools,build-tools-21.1.2,$ANDROID_NDK_PLATFORM \
-	&& rm -rf /tmp/*
+# Download & unpack android SDK
+RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip' \
+	&& mkdir -p /opt/android-sdk && unzip -q /tmp/sdk-tools.zip -d /opt/android-sdk && rm -f /tmp/sdk-tools.zip \
+	&& yes | sdkmanager --licenses && sdkmanager --verbose "platforms;${SDK_PLATFORM}" "build-tools;${SDK_BUILD_TOOLS}" ${SDK_PACKAGES}
 
-# Android NDK r10e
-RUN	wget -q http://dl.google.com/android/ndk/android-ndk-r10e-linux-x86_64.bin \
-        && chmod +x android-ndk-r10e-linux-x86_64.bin \
-        && ./android-ndk-r10e-linux-x86_64.bin > /dev/null \
-	&& mv android-ndk-r10e /opt/android-ndk-r10e \
-	&& chmod -R +rx /opt/android-ndk-r10e \
-	&& rm -rf /tmp/*
+# Download & unpack android NDK
+RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip" \
+	&& unzip -q ndk.zip && mv android-ndk-* $ANDROID_NDK_ROOT && chmod -R +rX $ANDROID_NDK_ROOT \
+	&& rm -rf /tmp/android
+
+# Reconfigure locale
+RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
 
 # create and start as LOCAL_USER_ID
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
