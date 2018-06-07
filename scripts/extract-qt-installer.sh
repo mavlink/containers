@@ -3,13 +3,41 @@
 # License: Apache-2.0
 # https://github.com/benlau/qtci
 
+function usage() {
+    echo "Usage:"
+    echo "extract-qt-installer qt-installer output_path"
+    echo "extract-qt-installer --list-packages qt-installer"
+    exit -1
+}
+
+LIST_PACKAGES=0
+
+getopt --test > /dev/null 2>&1
+GETOPT_RET_CODE=$?
+
 set -e #quit on error
 
-if [ $# -lt 2 ];
+if [ "$GETOPT_RET_CODE" != "4" ]
 then
-    echo extract-qt-installer qt-installer output_path
-    exit -1
+    echo "Warning: gnu-getopt is not installed. Long parameter like '--list-package' will not be working. Please install gnu-getopt by 'brew install gnu-getopt'"   
+else
+
+	OPTS=`getopt -o l --long list-packages  -n "extract-qt-installer" -- "$@"`
+
+    eval set -- "$OPTS"
+
+    while true
+    do
+      case "$1" in
+        --list-packages)
+          LIST_PACKAGES=1
+          shift;;
+        --) shift;break;;
+        *) shift;;
+      esac
+    done
 fi
+
 
 export PATH=$PATH:$PWD
 export WORKDIR=$PWD
@@ -18,10 +46,29 @@ OUTPUT=$2
 SCRIPT="$(mktemp /tmp/tmp.XXXXXXXXX)"
 PACKAGES=$QT_CI_PACKAGES
 
-if [[ ! "${OUTPUT:0:1}" = "/" ]] 
+if [ $LIST_PACKAGES -gt 0 ]
 then 
-    echo output path must be an absolute path
-    exit -1
+
+	if [ $# -lt 1 ]
+	then
+		usage
+	fi
+	
+	OUTPUT="/tmp/Qt"
+
+else
+
+	if [ $# -lt 2 ]
+	then
+		usage
+	fi
+
+	if [[ ! "${OUTPUT:0:1}" = "/" ]] 
+	then 
+		echo output path must be an absolute path
+		exit -1
+	fi
+    
 fi
 
 cat <<EOF > $SCRIPT
@@ -62,24 +109,53 @@ function Controller() {
     });
     installer.setMessageBoxAutomaticAnswer("OverwriteTargetDirectory", QMessageBox.Yes);
     installer.setMessageBoxAutomaticAnswer("installationErrorWithRetry", QMessageBox.Ignore);
+    
+    // Allow to cancel installation
+    installer.setMessageBoxAutomaticAnswer("cancelInstallation", QMessageBox.Yes);
 }
 
 Controller.prototype.WelcomePageCallback = function() {
     log("Welcome Page");
     gui.clickButton(buttons.NextButton);
+
+    var widget = gui.currentPageWidget();
+
+    widget.completeChanged.connect(function() {
+        gui.clickButton(buttons.NextButton);
+    });
 }
 
 Controller.prototype.CredentialsPageCallback = function() {
+	
+	var login = installer.environmentVariable("QT_CI_LOGIN");
+	var password = installer.environmentVariable("QT_CI_PASSWORD");
+
+	if (login === "" || password === "") {
+		gui.clickButton(buttons.CommitButton);
+	}
+	
+    var widget = gui.currentPageWidget();
+
+	widget.loginWidget.EmailLineEdit.setText(login);
+
+	widget.loginWidget.PasswordLineEdit.setText(password);
+
     gui.clickButton(buttons.CommitButton);
 }
 
 Controller.prototype.ComponentSelectionPageCallback = function() {
+	log("ComponentSelectionPageCallback");
 
-    var components = installer.components();
-    log("Available components: " + components.length);
+    if ($LIST_PACKAGES) {
+      var components = installer.components();
+      log("Available components: " + components.length);
 
-    for (var i = 0 ; i < components.length ;i++) {
-        log(components[i].name);
+      for (var i = 0 ; i < components.length ;i++) {
+          log(components[i].name);
+      }
+      
+      gui.clickButton(buttons.CancelButton);
+      return;
     }
 
     log("Select components");
@@ -146,6 +222,8 @@ Controller.prototype.PerformInstallationPageCallback = function() {
 }
 
 Controller.prototype.FinishedPageCallback = function() {
+    log("FinishedPageCallback");
+
     var widget = gui.currentPageWidget();
 
     if (widget.LaunchQtCreatorCheckBoxForm) {
