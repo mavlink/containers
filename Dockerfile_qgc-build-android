@@ -6,12 +6,16 @@ FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
 ARG QT_VERSION=5.11.0
+
 ARG NDK_VERSION=r16b
 ARG SDK_PLATFORM=android-21
 ARG SDK_BUILD_TOOLS=21.1.2
 ARG SDK_PACKAGES="tools platform-tools"
 
 ENV DEBIAN_FRONTEND noninteractive
+
+ENV QMAKESPEC android-g++
+
 ENV QT_PATH /opt/Qt
 ENV QT_ANDROID ${QT_PATH}/${QT_VERSION}/android_armv7
 
@@ -26,7 +30,6 @@ ENV ANDROID_NDK_HOST linux-x86_64
 ENV ANDROID_NDK_PLATFORM ${SDK_PLATFORM}
 ENV ANDROID_NDK_TOOLS_PREFIX ${ANDROID_NDK_TOOLCHAIN_PREFIX}
 
-ENV QMAKESPEC android-g++
 ENV PATH /usr/lib/ccache:${QT_ANDROID}/bin:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools:${PATH}
 
 RUN	dpkg --add-architecture i386 \
@@ -53,6 +56,7 @@ RUN	dpkg --add-architecture i386 \
 		libz1:i386 \
 		locales \
 		make \
+		ninja-build \
 		openssh-client \
 		unzip \
 		wget \
