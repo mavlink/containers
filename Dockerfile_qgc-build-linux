@@ -24,26 +24,18 @@ RUN	apt-get update && apt-get -y --quiet --no-install-recommends install \
 		gcc \
 		git \
 		gosu \
-		libdbus-1-3 \
 		libespeak-dev \
 		libfontconfig1 \
-		libfontconfig1 \
-		libgl1-mesa-dev \
 		libgstreamer-plugins-base1.0-dev \
 		libgstreamer1.0-0:amd64 \
 		libgstreamer1.0-dev \
-		libice6 \
 		libsdl2-dev \
-		libsm6 \
 		libudev-dev \
-		libxext6 \
-		libxrender1 \
 		locales \
 		openssh-client \
 		pkg-config \
 		snapcraft \
 		speech-dispatcher \
-		sudo \
 		wget \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
