@@ -78,7 +78,8 @@ RUN    cd /usr/local/src/ \
     && make \
     && make install \
     && mkdir -p ${QT_PATH}/Tools/OpenSSL/binary/lib/ && cp -f /usr/local/ssl/lib/libcrypto.so.1.1 ${QT_PATH}/Tools/OpenSSL/binary/lib/ \
-    && cp -f /usr/local/ssl/lib/libssl.so.1.1 ${QT_PATH}/Tools/OpenSSL/binary/lib/
+    && cp -f /usr/local/ssl/lib/libssl.so.1.1 ${QT_PATH}/Tools/OpenSSL/binary/lib/ \
+    && cd .. && rm -rf openssl-1.1.1c.tar.gz && rm -rf openssl-1.1.1c
 
 # create user with id 1001 (jenkins docker workflow default)
 RUN useradd --shell /bin/bash -u 1001 -c "" -m user && usermod -a -G dialout user
