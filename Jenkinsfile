@@ -13,13 +13,13 @@ pipeline {
           }
           steps {
             git 'https://github.com/mavlink/qgroundcontrol.git'
-            dir(path: 'Firmware') {
+            dir(path: 'qgroundcontrol') {
               sh 'export'
-              //sh 'make clean'
-              sh 'ccache -z'
-              //sh 'make'
+              sh 'git clean -ff -x -d .'
+              sh 'ls'
+              //sh 'make linux'
               sh 'ccache -s'
-              //sh 'make clean'
+              sh 'git clean -ff -x -d .'
             }
           }
         }
@@ -33,13 +33,35 @@ pipeline {
           }
           steps {
             git 'https://github.com/mavlink/qgroundcontrol.git'
-            dir(path: 'Firmware') {
+            dir(path: 'qgroundcontrol') {
               sh 'export'
-              //sh 'make clean'
+              sh 'git clean -ff -x -d .'
               sh 'ccache -z'
-              //sh 'make'
+              sh 'ls'
+              //sh 'make android'
               sh 'ccache -s'
-              //sh 'make clean'
+              sh 'git clean -ff -x -d .'
+            }
+          }
+        }
+
+        stage('qgc-build-android_arm64_v8a') {
+          agent {
+            dockerfile {
+              filename 'Dockerfile_qgc-build-android_arm64_v8a'
+              args '-e CCACHE_BASEDIR=$WORKSPACE -v ${CCACHE_DIR}:${CCACHE_DIR}:rw'
+            }
+          }
+          steps {
+            git 'https://github.com/mavlink/qgroundcontrol.git'
+            dir(path: 'qgroundcontrol') {
+              sh 'export'
+              sh 'git clean -ff -x -d .'
+              sh 'ccache -z'
+              sh 'ls'
+              //sh 'make android'
+              sh 'ccache -s'
+              sh 'git clean -ff -x -d .'
             }
           }
         }
