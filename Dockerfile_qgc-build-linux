@@ -2,10 +2,10 @@
 # QGroundControl linux build environment
 #
 
-FROM ubuntu:xenial
+FROM ubuntu:16.04
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-ARG QT_VERSION=5.11.0
+ARG QT_VERSION=5.11.3
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -18,17 +18,21 @@ ENV QT_DESKTOP $QT_PATH/${QT_VERSION}/gcc_64
 
 ENV PATH /usr/lib/ccache:$QT_DESKTOP/bin:$PATH
 
-RUN	apt-get update && apt-get -y --quiet --no-install-recommends install \
+RUN apt-get update && apt-get -y --quiet --no-install-recommends install \
+		apt-utils \
 		build-essential \
 		ca-certificates \
 		ccache \
+		checkinstall \
 		cmake \
 		curl \
 		espeak \
+		fuse \
 		g++ \
 		gcc \
 		git \
 		gosu \
+		kmod \
 		libespeak-dev \
 		libfontconfig1 \
 		libfuse2 \
@@ -36,16 +40,20 @@ RUN	apt-get update && apt-get -y --quiet --no-install-recommends install \
 		libgstreamer1.0-0:amd64 \
 		libgstreamer1.0-dev \
 		libsdl2-dev \
+		libssl-dev \
 		libudev-dev \
 		locales \
 		make \
 		ninja-build \
 		openssh-client \
+		openssl \
 		pkg-config \
+		rsync \
 		snapcraft \
 		speech-dispatcher \
 		wget \
 		xvfb \
+		zlib1g-dev \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
@@ -53,13 +61,24 @@ RUN	apt-get update && apt-get -y --quiet --no-install-recommends install \
 COPY scripts/extract-qt-installer.sh /tmp/qt/
 
 # Download & unpack Qt toolchains & clean
-RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/official_releases/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
-	&& QT_CI_PACKAGES=qt.qt5.$(echo "${QT_VERSION}" | tr -d .).gcc_64,qt.qt5.$(echo "${QT_VERSION}" | tr -d .).qtcharts /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
+RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
+	&& QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.gcc_64,qt.qt5.${QT_PACKAGE_VER}.qtcharts,qt.qt5.${QT_PACKAGE_VER}.qtvirtualkeyboard,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
 	&& find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
 	&& rm -rf /tmp/*
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
+
+# Compile OpenSSL 1.1.1.c
+RUN    cd /usr/local/src/ \
+    && sudo wget https://www.openssl.org/source/openssl-1.1.1c.tar.gz \
+    && tar -xf openssl-1.1.1c.tar.gz \
+    && cd openssl-1.1.1c \
+    && ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib \
+    && make \
+    && make install \
+    && mkdir -p ${QT_PATH}/Tools/OpenSSL/binary/lib/ && cp -f /usr/local/ssl/lib/libcrypto.so.1.1 ${QT_PATH}/Tools/OpenSSL/binary/lib/ \
+    && cp -f /usr/local/ssl/lib/libssl.so.1.1 ${QT_PATH}/Tools/OpenSSL/binary/lib/
 
 # create user with id 1001 (jenkins docker workflow default)
 RUN useradd --shell /bin/bash -u 1001 -c "" -m user && usermod -a -G dialout user
@@ -69,3 +88,5 @@ COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 CMD ["/bin/bash"]
+
+ENV DEBIAN_FRONTEND teletype
