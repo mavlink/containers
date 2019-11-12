@@ -5,7 +5,7 @@
 FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-ARG QT_VERSION=5.11.3
+ARG QT_VERSION=5.12.5
 ARG NDK_VERSION=r20b
 ARG SDK_BUILD_TOOLS=25.0.3
 ARG SDK_PACKAGES="tools platform-tools"
