@@ -25,6 +25,9 @@ ENV ANDROID_NDK_TOOLCHAIN_VERSION=4.9
 ENV QMAKESPEC=android-clang
 ENV QT_PLATFORM=android_armv7
 
+ENV QGC_ANDROID_GSTREAMER_URL=https://gstreamer.freedesktop.org/data/pkg/android/1.14.4/gstreamer-1.0-android-universal-1.14.4.tar.bz2
+ENV QGC_ANDROID_GSTREAMER_PATH=/opt/gstreamer-1.0-android-universal-1.14.4
+
 ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
 ENV ANDROID_NDK_PLATFORM=${SDK_PLATFORM}
 ENV ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk-${NDK_VERSION}
@@ -87,6 +90,9 @@ RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-to
 RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip" \
 	&& unzip -q ndk.zip && mv android-ndk-* $ANDROID_NDK_ROOT && chmod -R +rX $ANDROID_NDK_ROOT \
 	&& rm -rf /tmp/android
+	
+# 
+RUN curl --silent -Lo /tmp/gstreamer-android.tar.bz2 ${QGC_ANDROID_GSTREAMER_URL} && mkdir ${QGC_ANDROID_GSTREAMER_PATH} && tar jxf /tmp/gstreamer-android.tar.bz2 -C ${QGC_ANDROID_GSTREAMER_PATH} && rm -f /tmp/gstreamer-android.tar.bz2
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
