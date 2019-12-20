@@ -69,6 +69,7 @@ RUN dpkg --add-architecture i386 \
 		wget \
 		xvfb \
 		zlib1g:i386 \
+		bzip2 \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
