@@ -83,7 +83,7 @@ RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${
 	&& rm -rf /tmp/*
 
 # Download & unpack android SDK
-RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip' \
+RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip' \
 	&& mkdir -p ${ANDROID_HOME} && unzip -q /tmp/sdk-tools.zip -d ${ANDROID_HOME} && rm -f /tmp/sdk-tools.zip \
 	&& yes | sdkmanager --licenses && sdkmanager --verbose "platforms;${SDK_PLATFORM}" "build-tools;${SDK_BUILD_TOOLS}" ${SDK_PACKAGES}
 
