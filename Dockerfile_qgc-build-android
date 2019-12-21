@@ -28,8 +28,6 @@ ENV QT_PLATFORM=android_armv7
 ENV QGC_ANDROID_GSTREAMER_URL=https://gstreamer.freedesktop.org/pkg/android/1.14.4/gstreamer-1.0-android-universal-1.14.4.tar.bz2
 ENV QGC_ANDROID_GSTREAMER_PATH=/opt/gstreamer-1.0-android-universal-1.14.4
 
-# Configure JAVA to not blow up on Android install
-ENV JAVA_OPTS='-XX:+IgnoreUnrecognizedVMOptions --add-modules java.se.ee'
 ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
 ENV ANDROID_NDK_PLATFORM=${SDK_PLATFORM}
 ENV ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk-${NDK_VERSION}
@@ -42,7 +40,7 @@ ENV PATH=${QT_PATH}/${QT_VERSION}/${QT_PLATFORM}/bin:${ANDROID_NDK_TOOLCHAIN}/${
 ENV PATH=/usr/lib/ccache:${PATH}
 
 RUN dpkg --add-architecture i386 \
-	&& apt-get update && apt-get -y --quiet --no-install-recommends install \
+	&& add-apt-repository ppa:linuxuprising/java && apt-get update && apt-get -y --quiet --no-install-recommends install \
 		ant \
 		ca-certificates \
 		ccache \
@@ -72,6 +70,7 @@ RUN dpkg --add-architecture i386 \
 		xvfb \
 		zlib1g:i386 \
 		bzip2 \
+		oracle-java10-set-default \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
@@ -83,6 +82,9 @@ RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${
 	&& QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtcharts.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth.android_armv7 /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
 	&& find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
 	&& rm -rf /tmp/*
+
+# Remove any non-Oracle Java
+RUN apt-get autoremove openjdk*
 
 # Download & unpack android SDK
 # URLs come from here: https://developer.android.com/studio#downloads
