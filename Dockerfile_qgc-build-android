@@ -42,11 +42,6 @@ ENV PATH=/usr/lib/ccache:${PATH}
 
 RUN dpkg --add-architecture i386 \
 	&& apt-get update \
-  	&& apt-get -y install software-properties-common \
-  	&& add-apt-repository ppa:linuxuprising/java \
-	&& apt-get update && echo oracle-java10-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections \
-  	&& apt-get -y install oracle-java10-installer \
-  	&& apt-get -y remove software-properties-common \
 	&& apt-get -y --quiet --no-install-recommends install \
 		ant \
 		ca-certificates \
@@ -77,7 +72,6 @@ RUN dpkg --add-architecture i386 \
 		xvfb \
 		zlib1g:i386 \
 		bzip2 \
-		oracle-java10-set-default \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
