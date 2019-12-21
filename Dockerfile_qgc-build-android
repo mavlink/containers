@@ -2,7 +2,8 @@
 # QGroundControl android build environment
 #
 
-FROM ubuntu:bionic
+# Bionic does not work yet: The default JDK is broken for Android
+FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
 ARG QT_VERSION=5.12.6
