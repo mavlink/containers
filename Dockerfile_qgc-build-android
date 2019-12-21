@@ -2,12 +2,12 @@
 # QGroundControl android build environment
 #
 
-FROM ubuntu:xenial
+FROM ubuntu:bionic
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-ARG QT_VERSION=5.12.5
+ARG QT_VERSION=5.12.6
 ARG NDK_VERSION=r20b
-ARG SDK_BUILD_TOOLS=25.0.3
+ARG SDK_BUILD_TOOLS=28.0.3
 ARG SDK_PACKAGES="tools platform-tools"
 ARG SDK_PLATFORM=android-21
 
