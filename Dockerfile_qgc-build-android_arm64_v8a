@@ -2,10 +2,11 @@
 # QGroundControl android build environment
 #
 
+# Default JDK is broken for Android on bionic
 FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-ARG QT_VERSION=5.12.5
+ARG QT_VERSION=5.12.6
 ARG NDK_VERSION=r20b
 ARG SDK_BUILD_TOOLS=25.0.3
 ARG SDK_PACKAGES="tools platform-tools"
@@ -24,6 +25,9 @@ ENV ANDROID_NDK_TOOLCHAIN_PREFIX=arm-linux-androideabi
 ENV ANDROID_NDK_TOOLCHAIN_VERSION=4.9
 ENV QMAKESPEC=android-clang
 ENV QT_PLATFORM=android_arm64_v8a
+
+ENV QGC_ANDROID_GSTREAMER_URL=https://qgroundcontrol.s3.amazonaws.com/dependencies/unchanged-gstreamer-1.0-android-universal-1.14.4.tar.bz2
+ENV QGC_ANDROID_GSTREAMER_PATH=/opt/gstreamer-1.0-android-universal-1.14.4
 
 ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
 ENV ANDROID_NDK_PLATFORM=${SDK_PLATFORM}
@@ -66,6 +70,7 @@ RUN dpkg --add-architecture i386 \
 		wget \
 		xvfb \
 		zlib1g:i386 \
+		bzip2 \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
@@ -87,6 +92,13 @@ RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-to
 RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip" \
 	&& unzip -q ndk.zip && mv android-ndk-* $ANDROID_NDK_ROOT && chmod -R +rX $ANDROID_NDK_ROOT \
 	&& rm -rf /tmp/android
+	
+# Download & unpack gstreamer
+RUN curl --silent -Lo /tmp/gstreamer-android.tar.bz2 ${QGC_ANDROID_GSTREAMER_URL} && mkdir -p ${QGC_ANDROID_GSTREAMER_PATH} && tar jxf /tmp/gstreamer-android.tar.bz2 -C ${QGC_ANDROID_GSTREAMER_PATH} && rm -f /tmp/gstreamer-android.tar.bz2
+# Delete Android x86, 64bit x86 and basic arm libraries
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/x86
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/x86_64
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/arm
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales

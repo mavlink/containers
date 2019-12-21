@@ -2,12 +2,13 @@
 # QGroundControl android build environment
 #
 
+# Bionic does not work yet: The default JDK is broken for Android
 FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-ARG QT_VERSION=5.12.5
+ARG QT_VERSION=5.12.6
 ARG NDK_VERSION=r20b
-ARG SDK_BUILD_TOOLS=25.0.3
+ARG SDK_BUILD_TOOLS=28.0.3
 ARG SDK_PACKAGES="tools platform-tools"
 ARG SDK_PLATFORM=android-21
 
@@ -25,8 +26,8 @@ ENV ANDROID_NDK_TOOLCHAIN_VERSION=4.9
 ENV QMAKESPEC=android-clang
 ENV QT_PLATFORM=android_armv7
 
-ENV QGC_ANDROID_GSTREAMER_URL=https://qgroundcontrol.s3.amazonaws.com/dependencies/gstreamer-1.0-android-universal-1.14.4.tar.bz2
-ENV QGC_ANDROID_GSTREAMER_PATH=/opt/
+ENV QGC_ANDROID_GSTREAMER_URL=https://gstreamer.freedesktop.org/pkg/android/1.14.4/gstreamer-1.0-android-universal-1.14.4.tar.bz2
+ENV QGC_ANDROID_GSTREAMER_PATH=/opt/gstreamer-1.0-android-universal-1.14.4
 
 ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
 ENV ANDROID_NDK_PLATFORM=${SDK_PLATFORM}
@@ -40,7 +41,8 @@ ENV PATH=${QT_PATH}/${QT_VERSION}/${QT_PLATFORM}/bin:${ANDROID_NDK_TOOLCHAIN}/${
 ENV PATH=/usr/lib/ccache:${PATH}
 
 RUN dpkg --add-architecture i386 \
-	&& apt-get update && apt-get -y --quiet --no-install-recommends install \
+	&& apt-get update \
+	&& apt-get -y --quiet --no-install-recommends install \
 		ant \
 		ca-certificates \
 		ccache \
@@ -83,7 +85,9 @@ RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${
 	&& rm -rf /tmp/*
 
 # Download & unpack android SDK
-RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip' \
+# URLs come from here: https://developer.android.com/studio#downloads
+
+RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip' \
 	&& mkdir -p ${ANDROID_HOME} && unzip -q /tmp/sdk-tools.zip -d ${ANDROID_HOME} && rm -f /tmp/sdk-tools.zip \
 	&& yes | sdkmanager --licenses && sdkmanager --verbose "platforms;${SDK_PLATFORM}" "build-tools;${SDK_BUILD_TOOLS}" ${SDK_PACKAGES}
 
@@ -94,6 +98,10 @@ RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google
 	
 # Download & unpack gstreamer
 RUN curl --silent -Lo /tmp/gstreamer-android.tar.bz2 ${QGC_ANDROID_GSTREAMER_URL} && mkdir -p ${QGC_ANDROID_GSTREAMER_PATH} && tar jxf /tmp/gstreamer-android.tar.bz2 -C ${QGC_ANDROID_GSTREAMER_PATH} && rm -f /tmp/gstreamer-android.tar.bz2
+# Delete Android x86, 64bit x86 and basic arm libraries
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/x86
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/x86_64
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/arm
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
