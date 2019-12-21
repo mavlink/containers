@@ -98,6 +98,10 @@ RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google
 	
 # Download & unpack gstreamer
 RUN curl --silent -Lo /tmp/gstreamer-android.tar.bz2 ${QGC_ANDROID_GSTREAMER_URL} && mkdir -p ${QGC_ANDROID_GSTREAMER_PATH} && tar jxf /tmp/gstreamer-android.tar.bz2 -C ${QGC_ANDROID_GSTREAMER_PATH} && rm -f /tmp/gstreamer-android.tar.bz2
+# Delete Android x86, 64bit x86 and basic arm libraries
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/x86
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/x86_64
+RUN rm -rf ${QGC_ANDROID_GSTREAMER_PATH}/arm
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
