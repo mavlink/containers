@@ -5,7 +5,7 @@
 FROM ubuntu:18.04
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
-ARG QT_VERSION=5.12.6
+ARG QT_VERSION=5.12.7
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -39,6 +39,7 @@ RUN apt-get update && apt-get -y --quiet --no-install-recommends install \
 		libgstreamer-plugins-base1.0-dev \
 		libgstreamer1.0-0:amd64 \
 		libgstreamer1.0-dev \
+		gstreamer1.0-gl \
 		libsdl2-dev \
 		libssl-dev \
 		libudev-dev \
@@ -54,17 +55,21 @@ RUN apt-get update && apt-get -y --quiet --no-install-recommends install \
 		wget \
 		xvfb \
 		zlib1g-dev \
+		libxkbcommon-x11-0 \
 	&& apt-get -y autoremove \
 	&& apt-get clean autoclean \
 	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 
 COPY scripts/extract-qt-installer.sh /tmp/qt/
 
-# Download & unpack Qt toolchains & clean
-RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
-	&& QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.gcc_64,qt.qt5.${QT_PACKAGE_VER}.qtcharts,qt.qt5.${QT_PACKAGE_VER}.qtvirtualkeyboard,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
-	&& find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
-	&& rm -rf /tmp/*
+# Download Qt toolchains
+RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run"
+
+# Unpack Qt toolchains & clean
+RUN QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.gcc_64,qt.qt5.${QT_PACKAGE_VER}.qtcharts,qt.qt5.${QT_PACKAGE_VER}.qtvirtualkeyboard,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
+        && find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
+        && rm -rf /tmp/*
+
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
