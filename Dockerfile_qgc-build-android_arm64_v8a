@@ -2,15 +2,15 @@
 # QGroundControl android build environment
 #
 
-# Default JDK is broken for Android on bionic
+# Bionic does not work yet: The default JDK is broken for Android
 FROM ubuntu:xenial
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
 ARG QT_VERSION=5.12.6
 ARG NDK_VERSION=r20b
-ARG SDK_BUILD_TOOLS=25.0.3
+ARG SDK_BUILD_TOOLS=29.0.0
 ARG SDK_PACKAGES="tools platform-tools"
-ARG SDK_PLATFORM=android-21
+ARG SDK_PLATFORM=android-29
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV DISPLAY :99
@@ -26,7 +26,7 @@ ENV ANDROID_NDK_TOOLCHAIN_VERSION=4.9
 ENV QMAKESPEC=android-clang
 ENV QT_PLATFORM=android_arm64_v8a
 
-ENV QGC_ANDROID_GSTREAMER_URL=https://qgroundcontrol.s3.amazonaws.com/dependencies/unchanged-gstreamer-1.0-android-universal-1.14.4.tar.bz2
+ENV QGC_ANDROID_GSTREAMER_URL=https://gstreamer.freedesktop.org/pkg/android/1.14.4/gstreamer-1.0-android-universal-1.14.4.tar.bz2
 ENV QGC_ANDROID_GSTREAMER_PATH=/opt/gstreamer-1.0-android-universal-1.14.4
 
 ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
@@ -41,7 +41,8 @@ ENV PATH=${QT_PATH}/${QT_VERSION}/${QT_PLATFORM}/bin:${ANDROID_NDK_TOOLCHAIN}/${
 ENV PATH=/usr/lib/ccache:${PATH}
 
 RUN dpkg --add-architecture i386 \
-	&& apt-get update && apt-get -y --quiet --no-install-recommends install \
+	&& apt-get update \
+	&& apt-get -y --quiet --no-install-recommends install \
 		ant \
 		ca-certificates \
 		ccache \
@@ -90,10 +91,13 @@ RUN QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${
     && find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
     && rm -rf /tmp/* && rm -f "${HOME}/.local/share/Qt/qtaccount.ini"
 
-# Download & unpack android SDK
-RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip' \
-	&& mkdir -p ${ANDROID_HOME} && unzip -q /tmp/sdk-tools.zip -d ${ANDROID_HOME} && rm -f /tmp/sdk-tools.zip \
-	&& yes | sdkmanager --licenses && sdkmanager --verbose "platforms;${SDK_PLATFORM}" "build-tools;${SDK_BUILD_TOOLS}" ${SDK_PACKAGES}
+# Download
+# URLs come from here: https://developer.android.com/studio#download
+RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip'
+
+# Unpack android SDK
+RUN mkdir -p ${ANDROID_HOME} && unzip -q /tmp/sdk-tools.zip -d ${ANDROID_HOME} && rm -f /tmp/sdk-tools.zip \
+    && yes | sdkmanager --sdk_root=${ANDROID_HOME} --licenses && sdkmanager --sdk_root=${ANDROID_HOME} --verbose "platforms;${SDK_PLATFORM}" "build-tools;${SDK_BUILD_TOOLS}" ${SDK_PACKAGES}
 
 # Download & unpack android NDK
 RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip" \
