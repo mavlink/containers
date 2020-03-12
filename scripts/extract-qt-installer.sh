@@ -31,7 +31,11 @@ Controller.prototype.WelcomePageCallback = function() {
 }
 
 Controller.prototype.CredentialsPageCallback = function() {
-    gui.clickButton(buttons.CommitButton);
+    // The new offline installer won't 
+    var page = gui.pageWidgetByObjectName("CredentialsPage");
+    page.loginWidget.EmailLineEdit.setText("$QT_CI_LOGIN");
+    page.loginWidget.PasswordLineEdit.setText("$QT_CI_PASSWORD");
+    gui.clickButton(buttons.NextButton);
 }
 
 Controller.prototype.ComponentSelectionPageCallback = function() {
