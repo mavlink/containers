@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker build --tag $IMAGE_NAME --file=$DOCKERFILE_PATH --build-arg QT_CI_LOGIN=$QT_CI_LOGIN --build-arg QT_CI_PASSWORD=$QT_CI_PASSWORD .
