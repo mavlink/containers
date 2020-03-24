@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: Auterion/checkout@v2
     - name: Build the Docker image
       env:
         QT_CI_LOGIN: ${{ secrets.QT_CI_LOGIN }}
