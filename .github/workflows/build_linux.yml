@@ -1,0 +1,16 @@
+name: Docker Image CI
+
+on:
+  pull_request:
+    branches: master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: Auterion/checkout@v2
+    - name: Build the Docker image
+      env:
+        QT_CI_LOGIN: ${{ secrets.QT_CI_LOGIN }}
+        QT_CI_PASSWORD: ${{ secrets.QT_CI_PASSWORD }}
+      run: docker build . --file Dockerfile_qgc-build-linux --build-arg QT_CI_LOGIN=$QT_CI_LOGIN --build-arg QT_CI_PASSWORD=$QT_CI_PASSWORD
