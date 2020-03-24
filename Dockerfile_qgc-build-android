@@ -78,14 +78,18 @@ RUN dpkg --add-architecture i386 \
 
 COPY scripts/extract-qt-installer.sh /tmp/qt/
 
-# Download & unpack Qt toolchains & clean
-RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
-	&& QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtcharts.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth.android_armv7 /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
-	&& find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
-	&& rm -rf /tmp/*
+# Download
+RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run"
 
-# Download & unpack android SDK
-# URLs come from here: https://developer.android.com/studio#downloads
+ARG QT_CI_LOGIN
+ARG QT_CI_PASSWORD
+ONBUILD ARG QT_CI_LOGIN=""
+ONBUILD ARG QT_CI_PASSWORD=""
+
+# Unpack Qt toolchains & clean
+RUN QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtcharts.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth.android_armv7 /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
+    && find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
+    && rm -rf /tmp/* && rm -f "${HOME}/.local/share/Qt/qtaccount.ini"
 
 RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip' \
 	&& mkdir -p ${ANDROID_HOME} && unzip -q /tmp/sdk-tools.zip -d ${ANDROID_HOME} && rm -f /tmp/sdk-tools.zip \
