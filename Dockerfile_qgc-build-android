@@ -8,9 +8,9 @@ MAINTAINER Daniel Agar <daniel@agar.ca>
 
 ARG QT_VERSION=5.12.6
 ARG NDK_VERSION=r20b
-ARG SDK_BUILD_TOOLS=28.0.3
+ARG SDK_BUILD_TOOLS=29.0.0
 ARG SDK_PACKAGES="tools platform-tools"
-ARG SDK_PLATFORM=android-21
+ARG SDK_PLATFORM=android-29
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV DISPLAY :99
@@ -78,18 +78,26 @@ RUN dpkg --add-architecture i386 \
 
 COPY scripts/extract-qt-installer.sh /tmp/qt/
 
-# Download & unpack Qt toolchains & clean
-RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
-	&& QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtcharts.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth.android_armv7 /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
-	&& find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
-	&& rm -rf /tmp/*
+# Download
+RUN curl -Lo /tmp/qt/installer.run "https://download.qt.io/archive/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run"
 
-# Download & unpack android SDK
-# URLs come from here: https://developer.android.com/studio#downloads
+ARG QT_CI_LOGIN
+ARG QT_CI_PASSWORD
+ONBUILD ARG QT_CI_LOGIN=""
+ONBUILD ARG QT_CI_PASSWORD=""
 
-RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip' \
-	&& mkdir -p ${ANDROID_HOME} && unzip -q /tmp/sdk-tools.zip -d ${ANDROID_HOME} && rm -f /tmp/sdk-tools.zip \
-	&& yes | sdkmanager --licenses && sdkmanager --verbose "platforms;${SDK_PLATFORM}" "build-tools;${SDK_BUILD_TOOLS}" ${SDK_PACKAGES}
+# Unpack Qt toolchains & clean
+RUN QT_PACKAGE_VER=$(echo "${QT_VERSION}" | tr -d .) QT_CI_PACKAGES=qt,qt.qt5.${QT_PACKAGE_VER},qt.qt5.${QT_PACKAGE_VER}.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtcharts.android_armv7,qt.qt5.${QT_PACKAGE_VER}.qtnetworkauth.android_armv7 /tmp/qt/extract-qt-installer.sh /tmp/qt/installer.run "$QT_PATH" \
+    && find "${QT_PATH}" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
+    && rm -rf /tmp/* && rm -f "${HOME}/.local/share/Qt/qtaccount.ini"
+
+# Download
+# URLs come from here: https://developer.android.com/studio#download
+RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip'
+
+# Unpack android SDK
+RUN mkdir -p ${ANDROID_HOME} && unzip -q /tmp/sdk-tools.zip -d ${ANDROID_HOME} && rm -f /tmp/sdk-tools.zip \
+    && yes | sdkmanager --sdk_root=${ANDROID_HOME} --licenses && sdkmanager --sdk_root=${ANDROID_HOME} --verbose "platforms;${SDK_PLATFORM}" "build-tools;${SDK_BUILD_TOOLS}" ${SDK_PACKAGES}
 
 # Download & unpack android NDK
 RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip" \
