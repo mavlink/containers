@@ -2,7 +2,7 @@
 # QGroundControl linux build environment
 #
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 MAINTAINER Daniel Agar <daniel@agar.ca>
 
 ARG QT_VERSION=5.12.6
