@@ -49,7 +49,6 @@ RUN apt update && apt -y --quiet --no-install-recommends install \
 		openssl \
 		pkg-config \
 		rsync \
-		snapcraft \
 		speech-dispatcher \
 		wget \
 		xvfb \
