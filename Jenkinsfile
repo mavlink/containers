@@ -14,10 +14,13 @@ pipeline {
           steps {
             git 'https://github.com/mavlink/qgroundcontrol.git'
             dir(path: 'qgroundcontrol') {
-              sh 'export'
-              sh 'git clean -ff -x -d .'
+              sh 'ccache -z'
               sh 'ls'
-              //sh 'make linux'
+              sh 'mkdir build'
+              dir(path: 'build') {
+                sh 'qmake ..'
+                sh 'make'
+              }
               sh 'ccache -s'
               sh 'git clean -ff -x -d .'
             }
